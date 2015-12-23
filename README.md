@@ -14,8 +14,7 @@ Thread Safe Priority Queue in C.
         d = priqueue_pop(h);
         if (d != NULL){
           printf("\n %s %u\n",(char *)d->data->data,(unsigned int)pthread_self());
-          free(d->data->data);
-          free(d);
+    			priqueue_node_free(h,d);
         }
         sched_yield();
         CHECK_COND(cond);
@@ -33,7 +32,7 @@ Thread Safe Priority Queue in C.
     
       Data *value = (Data *) malloc(sizeof(Data) * 100);
     
-      int i;
+      unsigned int i;
       for(i = 0; i < 100; i++){
         value[i].type = 1;
         value[i].data = (char *) malloc(6* sizeof(char *));
@@ -48,15 +47,14 @@ Thread Safe Priority Queue in C.
       pthread_join(t,NULL);
       pthread_join(t2,NULL);
     
-      free(value);
       priqueue_free(heap);
     
       return 0;
     }
-    
+
 # API
 
-Initialize Priority Queue with specified capacity .
+Initialize Priority Queue with specified capacity . Returns NULL if failed to lock the mutex.
 
     Priqueue *priqueue_initialize(int);
 
@@ -66,9 +64,13 @@ Insert into Queue with specified priority.
 
 Pops the node with maximum priority ( head ) . 
 
-    Node * priqueue_pop(Priqueue *);
+    Node *priqueue_pop(Priqueue *);
 
-Deallocate memory.
+Deallocate data node after poping.
+
+    void priqueue_node_free(Priqueue *, Node *);
+
+Deallocate memory. Also deallocates remaining nodes from queue .
 
     void priqueue_free(Priqueue *);
 
