@@ -42,8 +42,7 @@ void *consumer(void *arg){
     d = priqueue_pop(h);
     if (d != NULL){
       printf("\n %s %u\n",(char *)d->data->data,(unsigned int)pthread_self());
-      free(d->data->data);
-      free(d);
+			priqueue_node_free(h,d);
     }
     sched_yield();
     CHECK_COND(cond);
@@ -61,7 +60,7 @@ int main(){
 
   Data *value = (Data *) malloc(sizeof(Data) * 100);
 
-  int i;
+  unsigned int i;
   for(i = 0; i < 100; i++){
     value[i].type = 1;
     value[i].data = (char *) malloc(6* sizeof(char *));
@@ -76,7 +75,6 @@ int main(){
   pthread_join(t,NULL);
   pthread_join(t2,NULL);
 
-  free(value);
   priqueue_free(heap);
 
   return 0;

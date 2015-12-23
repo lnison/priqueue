@@ -22,42 +22,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
+#include <assert.h>
 
 #include "pqueue.h"
 
-#define MPANIC(x) ;if(x == NULL) { perror("Malloc failed."); exit(1); }
-#define ITER_AND_NULL(arr,length) int _iter_i;for(_iter_i=0; _iter_i < length; _iter_i++) { arr[_iter_i] = NULL; }
+#define GAP 2
 
-static void __insert(Priqueue *heap, Node* node);
-static Node *__pop(Priqueue *heap);
+#define MPANIC(x) ; assert(x != NULL)
+
+static void insert_node(Priqueue *heap, Node* node);
+static Node* pop_node(Priqueue *heap);
+static void swap_node(Priqueue *heap, unsigned int a, unsigned int b);
 
 MHEAP_API Priqueue* priqueue_initialize(int initial_length){
-  Priqueue *heap = (Priqueue *) malloc(sizeof(Priqueue)) MPANIC(heap);
+  unsigned int mutex_status;
+  
+  Priqueue *heap = (Priqueue *) malloc(sizeof(Priqueue)) MPANIC(heap);  
+  const size_t hsize = initial_length * sizeof(*heap->array);
 
-  pthread_mutex_init(&(heap->lock), NULL);
-
+  mutex_status = pthread_mutex_init(&(heap->lock), NULL);
+  if (mutex_status != 0) goto error;
+  
   heap->head = NULL;
   heap->heap_size = initial_length;
   heap->occupied = 0;
   heap->current = 1;
-  heap->array = malloc(initial_length * sizeof(*heap->array));
+  heap->array = malloc(hsize) MPANIC(heap->array);
 
-  ITER_AND_NULL(heap->array,initial_length);
+  memset(heap->array, 0x0, hsize);
 
   return heap;
+  
+ error:
+  free(heap);
+
+  return NULL;
 }
 
 static MHEAP_API MHEAPSTATUS realloc_heap(Priqueue *heap){
 
   if (heap->occupied >= heap->heap_size){
-    void **tmp;
-    tmp = realloc(heap->array,(2 * heap->heap_size) * sizeof(*heap->array));
-    if (tmp != NULL){
+    const size_t arrsize = sizeof(*heap->array);
+    
+    void **resized_heap;
+    resized_heap = realloc(heap->array, (2 * heap->heap_size) * arrsize);
+    if (resized_heap != NULL){
       heap->heap_size *= 2;
-      heap->array = (Node**) tmp;
+      heap->array = (Node**) resized_heap;
+      memset( (heap->array + heap->occupied + 1) , 0x00, (heap->heap_size / GAP) * arrsize );
       return MHEAP_OK;
     } else return MHEAP_REALLOCERROR;
   }
@@ -73,11 +88,11 @@ MHEAP_API void priqueue_insert(Priqueue *heap, Data *data, int priority){
   node->data = data;
 
   pthread_mutex_lock(&(heap->lock));
-  __insert(heap,node);
+  insert_node(heap,node);
   pthread_mutex_unlock(&(heap->lock));
 }
 
-static void __insert(Priqueue *heap, Node* node){
+static void insert_node(Priqueue *heap, Node* node){
 
   if (heap->current == 1 && heap->array[1] == NULL){
     heap->head = node;
@@ -89,29 +104,31 @@ static void __insert(Priqueue *heap, Node* node){
     return;
   }
 
-  if(heap->occupied >= heap->heap_size) realloc_heap(heap);
+  if(heap->occupied >= heap->heap_size) {
+    unsigned int realloc_status = realloc_heap(heap);
+    assert(realloc_status == MHEAP_OK);
+  }
+  
   if(heap->occupied <= heap->heap_size){
     node->index = heap->current;
     heap->array[heap->current] = node;
 
-    int parent = (heap->current / 2);
+    int parent = (heap->current / GAP);
 
     if (heap->array[parent]->priority < node->priority){
       heap->occupied++;
       heap->current++;
-      int depth = heap->current/2;
+      int depth = heap->current / GAP;
       int traverse = node->index;
+      
       while(depth >= 1){
+	
 	if (traverse == 1) break;
-        if(heap->array[traverse/2]->priority < heap->array[traverse]->priority){
-          int parent_index = heap->array[traverse/2]->index;
-          int child_index = traverse;
-          Node *tmp = heap->array[traverse/2];
-          heap->array[traverse/2] = heap->array[traverse];
-	  heap->array[traverse/2]->index = parent_index;
-          heap->array[traverse] = tmp;
-	  heap->array[traverse]->index = child_index;
-          traverse = parent_index;
+	unsigned int parent = (traverse / GAP);
+	
+        if(heap->array[parent]->priority < heap->array[traverse]->priority){
+	  swap_node(heap, parent , traverse);
+          traverse = heap->array[parent]->index;
         }
 	depth --;
       }
@@ -123,45 +140,52 @@ static void __insert(Priqueue *heap, Node* node){
   }
 }
 
+void swap_node(Priqueue *heap, unsigned int parent, unsigned int child){
+  Node *tmp = heap->array[parent];
+
+  heap->array[parent] = heap->array[child];
+  heap->array[parent]->index = tmp->index;
+
+  heap->array[child] = tmp;
+  heap->array[child]->index = child;
+  
+}
+
 MHEAP_API Node *priqueue_pop(Priqueue *heap){
   Node *node = NULL;
   
   pthread_mutex_lock(&(heap->lock));
-  node = __pop(heap);
+  node = pop_node(heap);
   pthread_mutex_unlock(&(heap->lock));
 
   return node;
 }
 
-static Node *__pop(Priqueue *heap){
+static Node *pop_node(Priqueue *heap){
   Node *node = NULL;
-  int i;
+  unsigned int i;
+  unsigned int depth;
 
   if (heap->current == 1) return node;
-  if (heap->current == 2) {
-    node = heap->array[1];
-    heap->array[1] = NULL;
-    heap->current -= 1;
-    heap->occupied -= 1;
-
-    return node;
-  }
-
-  if (heap->current >= 2 ){
+  
+  else if (heap->current >= 2 ){
     node = heap->array[1];
     heap->array[1] = heap->array[heap->current - 1];
     heap->current -= 1;
     heap->occupied -= 1;
-    int depth = (heap->current - 1)/2;
+    
+    depth = (heap->current -1) / 2;
+
     for(i = 1; i<=depth; i++){
-      if (heap->array[i]->priority < heap->array[i*2]->priority || heap->array[i]->priority < heap->array[(i*2)+1]->priority){
-	unsigned int biggest = heap->array[i*2]->priority > heap->array[(i*2)+1]->priority ? heap->array[(i*2)]->index : heap->array[(i*2)+1]->index;
-	unsigned int currindex = heap->array[i]->index;
-	Node *tmp = heap->array[i];
-	heap->array[i] = heap->array[biggest];
-	heap->array[i]->index = currindex;
-	heap->array[biggest] = tmp;
-	heap->array[biggest]->index = biggest;
+      
+      if (heap->array[i]->priority < heap->array[i * GAP]->priority ||
+	  heap->array[i]->priority < heap->array[(i * GAP)+1]->priority){
+	
+	unsigned int biggest = heap->array[i * GAP]->priority > heap->array[(i * GAP)+1]->priority ?
+	  heap->array[(i * GAP)]->index  :
+	  heap->array[(i * GAP)+1]->index;
+
+	swap_node(heap,i,biggest);
       }
     }
   }
@@ -169,9 +193,19 @@ static Node *__pop(Priqueue *heap){
   return node;
 }
 
-MHEAP_API void priqueue_free(Priqueue *heap){
-  if (heap->head != NULL) free(heap->head);
+MHEAP_API void priqueue_free(Priqueue *heap){  
+  if (heap->current >= 2 ) {
+    unsigned int i;
+    for (i = 1; i <= heap->current; i++) priqueue_node_free(heap,heap->array[i]);
+  }
+  
+  free(heap->head);
   free(*heap->array);
   free(heap->array);
   free(heap);
+}
+
+MHEAP_API void priqueue_node_free(Priqueue *heap,Node *node){
+  if (node != NULL) free(node->data->data);
+  free(node);  
 }

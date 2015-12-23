@@ -72,3 +72,6 @@ priqueue_pop(Priqueue *);
 
 void
 priqueue_free(Priqueue *);
+
+void
+priqueue_node_free(Priqueue *, Node *);
