@@ -52,7 +52,7 @@ MHEAP_API Priqueue* priqueue_initialize(int initial_length){
   heap->current = 1;
   heap->array = malloc(hsize) MPANIC(heap->array);
 
-  memset(heap->array, 0x0, hsize);
+  memset(heap->array, 0x00, hsize);
 
   return heap;
   
