@@ -77,3 +77,4 @@ Deallocate memory. Also deallocates remaining nodes from queue .
 # TODOs
 
 1. [Lightweight Mutex](http://preshing.com/20120226/roll-your-own-lightweight-mutex/)
+2. API to shrink array size.
