@@ -60,7 +60,7 @@ Initialize Priority Queue with specified capacity . Returns NULL if failed to lo
 
 Insert into Queue with specified priority.
 
-    void priqueue_insert(Priqueue *, Data *, int);
+    void priqueue_insert(Priqueue *, Data *, uintptr_t);
 
 Pops the node with maximum priority ( head ) . 
 
@@ -73,6 +73,9 @@ Deallocate data node after poping.
 Deallocate memory. Also deallocates remaining nodes from queue .
 
     void priqueue_free(Priqueue *);
+	
+Create a new queue from all elements in current queue .
+	Priqueue* priqueue_popall(Priqueue *queue);
 
 # TODOs
 
