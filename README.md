@@ -75,7 +75,8 @@ Deallocate memory. Also deallocates remaining nodes from queue .
     void priqueue_free(Priqueue *);
 	
 Create a new queue from all elements in current queue .
-	Priqueue* priqueue_popall(Priqueue *queue);
+
+    Priqueue* priqueue_popall(Priqueue *queue);
 
 # TODOs
 
