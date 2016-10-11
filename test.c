@@ -26,6 +26,7 @@ SOFTWARE.
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 #include <unistd.h>
 #include "pqueue.h"
 
@@ -47,6 +48,7 @@ void *consumer(void *arg){
     sched_yield();
     CHECK_COND(cond);
   }
+  return NULL;
 }
 
 int main(){
@@ -61,11 +63,12 @@ int main(){
   Data *value = (Data *) malloc(sizeof(Data) * 100);
 
   unsigned int i;
-  for(i = 0; i < 100; i++){
+  for(i = 0; i < 50; i++){
     value[i].type = 1;
     value[i].data = (char *) malloc(6* sizeof(char *));
     sprintf(value[i].data,"test %d.",i);
     priqueue_insert(heap,&value[i],i);
+    priqueue_insert_ptr(heap,strdup(value[i].data),1,i);
   }
 
   sleep(2);
