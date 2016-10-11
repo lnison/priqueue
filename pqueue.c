@@ -31,7 +31,6 @@
 #include <pthread.h>
 #include <string.h>
 #include <assert.h>
-#include <stdint.h>
 #include <math.h>
 #include "pqueue.h"
 
