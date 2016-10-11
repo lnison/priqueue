@@ -26,7 +26,7 @@ SOFTWARE.
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-
+#include <unistd.h>
 #include "pqueue.h"
 
 #define CHECK_COND(cond) if (__sync_bool_compare_and_swap(&cond,1,1)) break;
@@ -42,7 +42,7 @@ void *consumer(void *arg){
     d = priqueue_pop(h);
     if (d != NULL){
       printf("\n %s %u\n",(char *)d->data->data,(unsigned int)pthread_self());
-			priqueue_node_free(h,d);
+      priqueue_node_free(h,d);
     }
     sched_yield();
     CHECK_COND(cond);
