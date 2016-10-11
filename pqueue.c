@@ -115,6 +115,12 @@ error:
   free(node);  
 }
 
+MHEAP_API void priqueue_insert_ptr(Priqueue *heap, void *data, int type, uintptr_t priority){
+  Data *d = malloc(sizeof(Data)) MPANIC(d);
+  d->data = data;
+  d->type = type;
+  priqueue_insert(heap, d, priority);
+}
 
 MHEAP_API void priqueue_insertraw(Priqueue *heap, Node *data){
 
