@@ -16,7 +16,7 @@ LDFLAGS +=  $(foreach library, $(program_LIBRARIES), -l(library))
 all: $(program_NAME)
 
 $(program_NAME): $(program_OBJS)
-	$(CC) $(program_OBJS) $(program_LIBRARIES) -o $(program_NAME)
+	$(CC) $(program_OBJS) $(program_LIBRARIES) -o $(program_NAME) -std=c99
 
 clean:
 	@- $(RM) $(program_NAME)
