@@ -52,6 +52,7 @@ struct _heap {
   unsigned int heap_size;
   unsigned int occupied;
   unsigned int current;
+  pthread_mutex_t lock;
 };
 
 typedef enum {
@@ -84,8 +85,5 @@ priqueue_popall(Priqueue *);
 
 void
 priqueue_insertraw(Priqueue *, Node *);
-
-bool
-priqueue_search(Priqueue *, void *);
   
 #endif
