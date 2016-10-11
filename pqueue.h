@@ -28,6 +28,7 @@ SOFTWARE.
 #define MHEAP_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define MHEAP_API
 typedef struct _data Data;
