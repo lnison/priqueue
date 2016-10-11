@@ -28,6 +28,7 @@ SOFTWARE.
 #define MHEAP_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define MHEAP_API
 typedef struct _data Data;
@@ -70,9 +71,6 @@ priqueue_initialize(int);
 
 void
 priqueue_insert(Priqueue *, Data *, uintptr_t);
-
-void
-priqueue_insert_ptr(Priqueue *, void *, int, uintptr_t);
 
 Node *
 priqueue_pop(Priqueue *);
